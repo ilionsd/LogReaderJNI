@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">LogParser</string>
+
+    <string name="input_url">Input URL</string>
+    <string name="input_filter">Input filter</string>
+
+    <string name="message_help">Type in file URL and specify filter. Press `Ok` to start</string>
+    <string name="message_inprogress">The application is working</string>
+    <string name="error_url_empty">URL is empty!</string>
+    <string name="error_url_malformed">URL is invalid!</string>
+    <string name="error_filter_empty">Filter is empty!</string>
+</resources>

@@ -1,9 +1,13 @@
 package com.sburov.logparser.presentation;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.sburov.logparser.R;
@@ -12,16 +16,22 @@ import com.sburov.logparser.data.local.logreader.LogReaderImpl;
 import com.sburov.logparser.data.remote.downloadclient.StreamDownloadClientImpl;
 import com.sburov.logparser.domain.downloadclient.StreamConsumer;
 import com.sburov.logparser.domain.downloadclient.StreamDownloadClient;
+import com.sburov.logparser.domain.downloadclient.StreamDownloadListener;
 import com.sburov.logparser.domain.logreader.LogReader;
 import com.sburov.logparser.domain.logreader.LogReaderListener;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity implements LogReaderListener, SetupFragment.OnSetupReadyListener {
+public class MainActivity extends AppCompatActivity
+        implements LogReaderListener, StreamDownloadListener, SetupFragment.OnSetupReadyListener {
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private static final int PERMISSION_REQUEST_CODE = 1234597;
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(2);
     private final StreamDownloadClient downloadClient = new StreamDownloadClientImpl();
     private final LogReader logReader = new LogReaderImpl();
     private final FilteredLinesLogger logger = new FilteredLinesLogger(getApplicationContext());
@@ -32,12 +42,17 @@ public class MainActivity extends AppCompatActivity implements LogReaderListener
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+        }
+
         logReader.addListener(this);
         logReader.addListener(logger);
 
         if (logReader instanceof StreamConsumer) {
             downloadClient.setStreamConsumer((StreamConsumer) logReader);
         }
+        downloadClient.setStreamDownloadListener(this);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.fragment_setup, SetupFragment.class, savedInstanceState);
@@ -54,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements LogReaderListener
     public void onDestroy() {
         setupFragment.setOnSetupReadyListener(null);
 
+        downloadClient.setStreamDownloadListener(null);
         downloadClient.setStreamConsumer(null);
         logReader.removeListener(logger);
         logReader.removeListener(this);
@@ -62,13 +78,26 @@ public class MainActivity extends AppCompatActivity implements LogReaderListener
     }
 
     @Override
-    public void onSetupReady(@NonNull URL url, @NonNull String filter) {
+    public void onSetupReady(@NotNull URL url, @NotNull String filter) {
         logReader.setFilter(filter);
+        logReader.enablePulling(executorService);
         executorService.submit(() -> downloadClient.download(url));
+
     }
 
     @Override
-    public void onFiltered(@NonNull String line) {
+    public void onDownloadComplete() {
+        logReader.disablePulling();
+    }
+
+    @Override
+    public void onFiltered(@NotNull String line) {
         outputFragment.addLine(line);
     }
+
+    public boolean checkPermission(@NotNull String permission) {
+        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
+
 }

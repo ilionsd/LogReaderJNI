@@ -1,5 +1,6 @@
 package com.sburov.logparser.data.remote.downloadclient;
 
+import com.sburov.logparser.domain.downloadclient.StreamDownloadListener;
 import com.sburov.logparser.domain.downloadclient.StreamConsumer;
 import com.sburov.logparser.domain.downloadclient.StreamDownloadClient;
 
@@ -16,6 +17,7 @@ public class StreamDownloadClientImpl implements StreamDownloadClient {
     private final byte[] buffer;
 
     private StreamConsumer consumer;
+    private StreamDownloadListener listener;
 
     public StreamDownloadClientImpl() {
         this(DEFAULT_BUFFER_LENGTH);
@@ -27,6 +29,11 @@ public class StreamDownloadClientImpl implements StreamDownloadClient {
     @Override
     public void setStreamConsumer(StreamConsumer consumer) {
         this.consumer = consumer;
+    }
+
+    @Override
+    public void setStreamDownloadListener(StreamDownloadListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -68,6 +75,9 @@ public class StreamDownloadClientImpl implements StreamDownloadClient {
                 catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+            if (listener != null) {
+                listener.onDownloadComplete();
             }
         }
     }

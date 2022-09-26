@@ -6,6 +6,7 @@
 #define LOGPARSER_COM_SBUROV_LOGPARSER_DATA_LOCAL_LOGREADER_LOGREADERIMPL_H
 
 #include <jni.h>
+#include <jni.h>
 
 
 JNIEXPORT void JNICALL
@@ -17,6 +18,10 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeReleaseInstan
 (JNIEnv *, jobject);
 
 JNIEXPORT jboolean JNICALL
+Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeIsRunning
+(JNIEnv *, jobject);
+
+JNIEXPORT jboolean JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeSetFilter
 (JNIEnv *, jobject, jbyteArray);
 
@@ -24,8 +29,8 @@ JNIEXPORT jboolean JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeAddSourceBlock
 (JNIEnv *, jobject, jbyteArray, jint);
 
-JNIEXPORT void JNICALL
+JNIEXPORT jobjectArray JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeGetMatches
-(JNIEnv *, jobject)
+(JNIEnv *, jobject);
 
 #endif //LOGPARSER_COM_SBUROV_LOGPARSER_DATA_LOCAL_LOGREADER_LOGREADERIMPL_H

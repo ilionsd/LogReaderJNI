@@ -75,6 +75,9 @@ bool CLogReader::AddSourceBlock(const char *block, const size_t size) {
             m_Lines.push(std::move(pStr));
         }
     }
+    if (!IsRunning()) {
+        StartProcessing();
+    }
     return true;
 }
 
@@ -131,6 +134,7 @@ bool CLogReader::ProcessLine(const char *line, const size_t index) const {
 
 bool CLogReader::StartProcessing() {
     m_Worker = std::thread(&CLogReader::DoWork, this);
+    return true;
 }
 
 std::pair<const char *, const char *>

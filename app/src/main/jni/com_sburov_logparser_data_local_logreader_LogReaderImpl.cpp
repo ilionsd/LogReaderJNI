@@ -20,6 +20,7 @@ static const char* kTAG = "logreader-jni";
 typedef struct LogReader_context {
     JavaVM *javaVM;
     jclass logReaderClazz;
+    jclass byteArrayClazz;
     jfieldID nativeLogReaderPtrFieldID;
     jmethodID foundLineMethodID;
     jmethodID onProcessingStartedMethodID;
@@ -57,6 +58,9 @@ JNI_OnLoad(
     g_ctx.logReaderClazz = env->FindClass(
         "com/sburov/logparser/data/local/logreader/LogReaderImpl");
 
+    g_ctx.byteArrayClazz = env->FindClass(
+        "[B");
+
     g_ctx.nativeLogReaderPtrFieldID = env->GetFieldID(g_ctx.logReaderClazz,
         "nativeLogReaderPtr", "J");
 
@@ -91,6 +95,18 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeReleaseInstan
     jlong nativeLogReaderPtr = env->GetLongField(thiz, g_ctx.nativeLogReaderPtrFieldID);
     auto* pLogReaderClass = reinterpret_cast<CLogReader *>(nativeLogReaderPtr);
     delete pLogReaderClass;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeIsRunning(
+    JNIEnv *env,
+    jobject thiz
+) {
+    jlong nativeLogReaderPtr = env->GetLongField(thiz, g_ctx.nativeLogReaderPtrFieldID);
+    auto *pLogReader = reinterpret_cast<CLogReader *>(nativeLogReaderPtr);
+    return (pLogReader->IsRunning())
+        ? JNI_TRUE
+        : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -132,7 +148,7 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeAddSourceBloc
            : JNI_FALSE;
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeGetMatches(
         JNIEnv *env,
         jobject thiz
@@ -140,12 +156,17 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeGetMatches(
     jlong nativeLogReaderPtr = env->GetLongField(thiz, g_ctx.nativeLogReaderPtrFieldID);
     auto *pLogReader = reinterpret_cast<CLogReader *>(nativeLogReaderPtr);
     auto matchingLines = pLogReader->GetMatches();
-    for (auto& line : matchingLines) {
-        size_t length = strlen(line.get());
+    if (matchingLines.empty()) {
+        return NULL;
+    }
+    jobjectArray jMatchingLines = env->NewObjectArray(static_cast<jsize>(matchingLines.size()), g_ctx.byteArrayClazz, NULL);
+    for (std::size_t k = 0; k < matchingLines.size(); k++) {
+        size_t length = strlen(matchingLines[k].get());
         jbyteArray jLine = env->NewByteArray(static_cast<jsize>(length));
         env->SetByteArrayRegion(jLine,
                                 0, static_cast<jsize>(length),
-                                reinterpret_cast<const jbyte *>(line.get()));
-        env->CallVoidMethod(thiz, g_ctx.foundLineMethodID, jLine);
+                                reinterpret_cast<const jbyte *>(matchingLines[k].get()));
+        env->SetObjectArrayElement(jMatchingLines, static_cast<jsize>(k), jLine);
     }
+    return jMatchingLines;
 }

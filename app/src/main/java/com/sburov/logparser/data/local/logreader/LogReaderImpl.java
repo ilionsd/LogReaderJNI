@@ -11,12 +11,20 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 public class LogReaderImpl implements LogReader, StreamConsumer {
 
-    private boolean isRunning = false;
+    private static final int SLEEP_WAITING_MS = 100;
+
+    private boolean isPullingEnabled = false;
+    @SuppressWarnings({"unused", "FieldMayBeFinal"})
     private long nativeLogReaderPtr = 0;
-    private Set<LogReaderListener> listeners = new HashSet<>();
+    private final Set<LogReaderListener> listeners = new HashSet<>();
+
+    static {
+        System.loadLibrary("logreader");
+    }
 
     public LogReaderImpl() {
         nativeCreateInstance();
@@ -48,9 +56,52 @@ public class LogReaderImpl implements LogReader, StreamConsumer {
     }
 
     @Override
+    public synchronized boolean isPullingEnabled() {
+        return isPullingEnabled;
+    }
+
+    @Override
+    public synchronized void enablePulling(ExecutorService executorService) {
+        if (isPullingEnabled) {
+            return;
+        }
+        isPullingEnabled = true;
+        executorService.submit(this::pulling);
+    }
+
+    @Override
+    public synchronized void disablePulling() {
+        if (!isPullingEnabled) {
+            return;
+        }
+        isPullingEnabled = false;
+    }
+
+    @Override
     protected void finalize() throws Throwable {
         nativeReleaseInstance();
         super.finalize();
+    }
+
+    private void pulling() {
+        while (true) {
+            byte[][] matchingLines = nativeGetMatches();
+            if (matchingLines != null) {
+                for (byte[] line : matchingLines) {
+                    foundLine(line);
+                }
+            }
+            else if (isPullingEnabled() || nativeIsRunning()) {
+                try {
+                    Thread.sleep(SLEEP_WAITING_MS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                break;
+            }
+        }
     }
 
     private void foundLine(byte[] line) {
@@ -60,26 +111,16 @@ public class LogReaderImpl implements LogReader, StreamConsumer {
         }
     }
 
-    private native void nativeGetMatches();
-
-    private synchronized void onProcessingStarted() {
-        isRunning = true;
-    }
-
-    private synchronized void onProcessingEnded() {
-        isRunning = false;
-    }
-
     private native void nativeCreateInstance();
 
     private native void nativeReleaseInstance();
+
+    private native boolean nativeIsRunning();
 
     private native boolean nativeSetFilter(byte[] filter);
 
     private native boolean nativeAddSourceBlock(byte[] block, int length);
 
-    private native void nativeProcess();
-
-
+    private native byte[][] nativeGetMatches();
 
 }

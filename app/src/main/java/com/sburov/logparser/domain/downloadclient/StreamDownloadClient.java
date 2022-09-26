@@ -5,4 +5,5 @@ import java.net.URL;
 public interface StreamDownloadClient {
     void download(URL url);
     void setStreamConsumer(StreamConsumer consumer);
+    void setStreamDownloadListener(StreamDownloadListener listener);
 }

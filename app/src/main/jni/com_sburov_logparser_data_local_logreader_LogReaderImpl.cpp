@@ -151,18 +151,22 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeGetMatches(
 ) {
     jlong nativeLogReaderPtr = env->GetLongField(thiz, g_ctx.nativeLogReaderPtrFieldID);
     auto *pLogReader = reinterpret_cast<CLogReader *>(nativeLogReaderPtr);
+
     auto matchingLines = pLogReader->GetMatches();
     if (matchingLines.empty()) {
         return NULL;
     }
-    jobjectArray jMatchingLinesArray = env->NewObjectArray(static_cast<jsize>(matchingLines.size()),
+    jsize jSize = static_cast<jsize>(matchingLines.size());
+    jobjectArray jMatchingLinesArray = env->NewObjectArray(jSize,
                                                            g_ctx.byteArrayClazz, NULL);
     for (std::size_t k = 0; k < matchingLines.size(); k++) {
         size_t length = strlen(matchingLines[k].get());
-        jbyteArray jLineArray = env->NewByteArray(static_cast<jsize>(length));
+        jsize jLength = static_cast<jsize>(length);
+        jbyte *jMatchingLines = reinterpret_cast<jbyte *>(matchingLines[k].get());
+        jbyteArray jLineArray = env->NewByteArray(jLength);
         env->SetByteArrayRegion(jLineArray,
-                                0, static_cast<jsize>(length),
-                                reinterpret_cast<const jbyte *>(matchingLines[k].get()));
+                                0, jLength,
+                                jMatchingLines);
         env->SetObjectArrayElement(jMatchingLinesArray, static_cast<jsize>(k), jLineArray);
     }
     return jMatchingLinesArray;

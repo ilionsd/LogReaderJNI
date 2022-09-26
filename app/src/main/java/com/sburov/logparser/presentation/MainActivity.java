@@ -56,12 +56,12 @@ public class MainActivity extends AppCompatActivity
             downloadClient.setStreamConsumer((StreamConsumer) logReader);
         }
         downloadClient.setStreamDownloadListener(this);
-/*
+
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.fragment_setup, SetupFragment.class, savedInstanceState);
         transaction.add(R.id.fragment_output, OutputFragment.class, savedInstanceState);
         transaction.commitNow();
-*/
+
         setupFragment = (SetupFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_setup);
         outputFragment = (OutputFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_output);
 
@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFiltered(@NotNull String line) {
-        outputFragment.addLine(line);
+        runOnUiThread(() -> outputFragment.addLine(line));
     }
 
     public boolean checkPermission(@NotNull String permission) {

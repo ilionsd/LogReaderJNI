@@ -4,8 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <fragment
-        android:name="com.sburov.logparser.presentation.SetupFragment"
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_setup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -13,13 +12,13 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <fragment
-        android:name="com.sburov.logparser.presentation.OutputFragment"
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_output"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/fragment_setup"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

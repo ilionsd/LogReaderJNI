@@ -13,6 +13,8 @@ import com.sburov.logparser.R;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+
 public class OutputFragment extends Fragment {
 
     private ArrayAdapter<String> adapter;

@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSetupReady(@NotNull URL url, @NotNull String filter) {
+        setupFragment.disableOkButton();
         logReader.setFilter(filter);
         logReader.enablePulling(executorService);
         executorService.submit(() -> downloadClient.download(url));

@@ -9,4 +9,10 @@
     <string name="error_url_empty">URL is empty!</string>
     <string name="error_url_malformed">URL is invalid!</string>
     <string name="error_filter_empty">Filter is empty!</string>
+
+    <!--
+    Debug strings here:
+    -->
+    <string name="debug_url">https://raw.githubusercontent.com/ilionsd/LogReaderJNI/master/TestFile.txt</string>
+    <string name="debug_filter">*il*</string>
 </resources>

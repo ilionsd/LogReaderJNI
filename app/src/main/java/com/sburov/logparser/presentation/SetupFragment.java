@@ -41,6 +41,7 @@ public class SetupFragment extends Fragment {
         textEditFilter = view.findViewById(R.id.editTextFilter);
         textViewErrorMessage = view.findViewById(R.id.errorMessage);
         buttonOk = view.findViewById(R.id.buttonOk);
+        addButtonOkOnClickListener();
         return view;
     }
 

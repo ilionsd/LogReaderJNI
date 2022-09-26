@@ -24,6 +24,7 @@
         android:ems="10"
         android:inputType="textUri"
         android:hint="@string/input_url"
+        android:text="@string/debug_url"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/helpMessage" />
@@ -37,6 +38,7 @@
         android:layout_marginEnd="5dp"
         android:ems="10"
         android:hint="@string/input_filter"
+        android:text="@string/debug_filter"
         android:inputType="text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

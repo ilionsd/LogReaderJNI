@@ -4,6 +4,7 @@
 #include <android/log.h>
 #include <cstring>
 #include <jni.h>
+#include <cassert>
 
 #include "LogReader.h"
 
@@ -22,9 +23,6 @@ typedef struct LogReader_context {
     jclass logReaderClazz;
     jclass byteArrayClazz;
     jfieldID nativeLogReaderPtrFieldID;
-    jmethodID foundLineMethodID;
-    jmethodID onProcessingStartedMethodID;
-    jmethodID onProcessingEndedMethodID;
     int done;
 } LogReaderContext;
 LogReaderContext g_ctx;
@@ -55,23 +53,16 @@ JNI_OnLoad(
         return JNI_ERR; // JNI version not supported.
     }
 
-    g_ctx.logReaderClazz = env->FindClass(
-        "com/sburov/logparser/data/local/logreader/LogReaderImpl");
+    jclass logReaderClazz = env->FindClass(
+            "com/sburov/logparser/data/local/logreader/LogReaderImpl");
+    g_ctx.logReaderClazz = (jclass) env->NewGlobalRef(logReaderClazz);
 
-    g_ctx.byteArrayClazz = env->FindClass(
-        "[B");
+    jclass byteArrayClazz = env->FindClass(
+            "[B");
+    g_ctx.byteArrayClazz = (jclass) env->NewGlobalRef(byteArrayClazz);
 
     g_ctx.nativeLogReaderPtrFieldID = env->GetFieldID(g_ctx.logReaderClazz,
         "nativeLogReaderPtr", "J");
-
-    g_ctx.foundLineMethodID = env->GetMethodID(g_ctx.logReaderClazz,
-        "foundLine", "([B)V");
-
-    g_ctx.onProcessingStartedMethodID = env->GetMethodID(g_ctx.logReaderClazz,
-        "onProcessingStarted", "()V");
-
-    g_ctx.onProcessingEndedMethodID = env->GetMethodID(g_ctx.logReaderClazz,
-        "onProcessingEnded", "()V");
 
     g_ctx.done = 0;
     return  JNI_VERSION_1_6;
@@ -113,15 +104,20 @@ extern "C" JNIEXPORT jboolean JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeSetFilter(
     JNIEnv* env,
     jobject thiz,
-    jbyteArray filter
+    jbyteArray jFilterArray,
+    jsize jLength
 ) {
     jlong nativeLogReaderPtr = env->GetLongField(thiz, g_ctx.nativeLogReaderPtrFieldID);
     auto *pLogReader = reinterpret_cast<CLogReader *>(nativeLogReaderPtr);
     bool isCopy;
-    jbyte* filterByteArrayElements = env->GetByteArrayElements(filter,
+    jbyte* jFilter = env->GetByteArrayElements(jFilterArray,
                                                                reinterpret_cast<jboolean *>(&isCopy));
-    bool success = pLogReader->SetFilter(reinterpret_cast<char *>(filterByteArrayElements));
-    env->ReleaseByteArrayElements(filter, filterByteArrayElements, JNI_ABORT);
+    const size_t bufferSize = 1024 * 1024;
+    assert((jLength < bufferSize));
+    char filter[bufferSize] = {0};
+    memcpy(filter, jFilter, static_cast<size_t>(jLength) * sizeof(jbyte));
+    bool success = pLogReader->SetFilter(filter);
+    env->ReleaseByteArrayElements(jFilterArray, jFilter, JNI_ABORT);
     return (success)
         ? JNI_TRUE
         : JNI_FALSE;
@@ -131,18 +127,18 @@ extern "C" JNIEXPORT jboolean JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeAddSourceBlock(
     JNIEnv* env,
     jobject thiz,
-    jbyteArray block,
-    jsize length
+    jbyteArray jBlockArray,
+    jsize jLength
 ) {
     jlong nativeLogReaderPtr = env->GetLongField(thiz, g_ctx.nativeLogReaderPtrFieldID);
     auto *pLogReader = reinterpret_cast<CLogReader *>(nativeLogReaderPtr);
     bool isCopy;
-    jbyte* blockByteArrayElements = env->GetByteArrayElements(block,
+    jbyte* jBlock = env->GetByteArrayElements(jBlockArray,
                                                               reinterpret_cast<jboolean *>(&isCopy));
     bool success = pLogReader->AddSourceBlock(
-            reinterpret_cast<char *>(blockByteArrayElements),
-            static_cast<size_t>(length));
-    env->ReleaseByteArrayElements(block, blockByteArrayElements, JNI_ABORT);
+            reinterpret_cast<char *>(jBlock),
+            static_cast<size_t>(jLength));
+    env->ReleaseByteArrayElements(jBlockArray, jBlock, JNI_ABORT);
     return (success)
            ? JNI_TRUE
            : JNI_FALSE;
@@ -159,14 +155,15 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeGetMatches(
     if (matchingLines.empty()) {
         return NULL;
     }
-    jobjectArray jMatchingLines = env->NewObjectArray(static_cast<jsize>(matchingLines.size()), g_ctx.byteArrayClazz, NULL);
+    jobjectArray jMatchingLinesArray = env->NewObjectArray(static_cast<jsize>(matchingLines.size()),
+                                                           g_ctx.byteArrayClazz, NULL);
     for (std::size_t k = 0; k < matchingLines.size(); k++) {
         size_t length = strlen(matchingLines[k].get());
-        jbyteArray jLine = env->NewByteArray(static_cast<jsize>(length));
-        env->SetByteArrayRegion(jLine,
+        jbyteArray jLineArray = env->NewByteArray(static_cast<jsize>(length));
+        env->SetByteArrayRegion(jLineArray,
                                 0, static_cast<jsize>(length),
                                 reinterpret_cast<const jbyte *>(matchingLines[k].get()));
-        env->SetObjectArrayElement(jMatchingLines, static_cast<jsize>(k), jLine);
+        env->SetObjectArrayElement(jMatchingLinesArray, static_cast<jsize>(k), jLineArray);
     }
-    return jMatchingLines;
+    return jMatchingLinesArray;
 }

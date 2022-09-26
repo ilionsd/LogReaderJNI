@@ -30,6 +30,13 @@ bool CLogReader::IsRunning() const {
     return m_bIsRunning;
 }
 
+bool IsText(const char symbol) {
+    return (symbol >= '0' && symbol <= '9') ||
+            (symbol >= 'A' && symbol <= 'z') ||
+            (symbol == '-') ||
+            (symbol == '_');
+}
+
 bool CLogReader::SetFilter(const char *filter) {
     const std::lock_guard<std::mutex> lock(m_mutexTokens);
     m_Tokens.clear();
@@ -39,7 +46,9 @@ bool CLogReader::SetFilter(const char *filter) {
         if (filter[pos] == '*') {
             // Wildcard
             size_t k = pos;
-            while (k < length && filter[k++] == '*');
+            while (k < length && filter[k] == '*') {
+                k++;
+            }
             std::unique_ptr<Token> token = std::make_unique<WildcardToken>();
             m_Tokens.push_back(std::move(token));
             pos = k;
@@ -50,15 +59,18 @@ bool CLogReader::SetFilter(const char *filter) {
             m_Tokens.push_back(std::move(token));
             pos++;
         }
-        else {
+        else if (IsText(filter[pos])) {
             // Substring
             size_t k = pos;
-            while (k < length && (filter[k] != '*' && filter[k] != '?')) {
+            while (k < length && IsText(filter[k])) {
                 k++;
             }
             std::unique_ptr<Token> token = std::make_unique<SubstringToken>(filter + pos, k - 1);
             m_Tokens.push_back(std::move(token));
             pos = k;
+        }
+        else {
+            pos++;
         }
     }
     return true;
@@ -70,8 +82,8 @@ bool CLogReader::AddSourceBlock(const char *block, const size_t size) {
     for (size_t pos = 0; pos < size; pos++) {
         if (block[pos] == '\n') {
             std::unique_ptr<char[]> pStr = std::make_unique<char[]>(pos - prev + 1);
-            memcpy(pStr.get(), block + prev, pos - prev);
-            prev = pos;
+            memcpy(pStr.get(), block + prev, (pos - prev) * sizeof(char));
+            prev = pos + 1;
             m_Lines.push(std::move(pStr));
         }
     }

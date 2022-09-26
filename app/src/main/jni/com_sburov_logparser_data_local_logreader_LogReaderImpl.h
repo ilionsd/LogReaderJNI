@@ -23,7 +23,7 @@ Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeIsRunning
 
 JNIEXPORT jboolean JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeSetFilter
-(JNIEnv *, jobject, jbyteArray);
+(JNIEnv *, jobject, jbyteArray, jsize);
 
 JNIEXPORT jboolean JNICALL
 Java_com_sburov_logparser_data_local_logreader_LogReaderImpl_nativeAddSourceBlock

@@ -34,13 +34,16 @@ public class MainActivity extends AppCompatActivity
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
     private final StreamDownloadClient downloadClient = new StreamDownloadClientImpl();
     private final LogReader logReader = new LogReaderImpl();
-    private final FilteredLinesLogger logger = new FilteredLinesLogger(getApplicationContext());
+    private FilteredLinesLogger logger = null;
     private SetupFragment setupFragment;
     private OutputFragment outputFragment;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        logger = new FilteredLinesLogger(getApplicationContext());
 
         if (checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
@@ -53,12 +56,12 @@ public class MainActivity extends AppCompatActivity
             downloadClient.setStreamConsumer((StreamConsumer) logReader);
         }
         downloadClient.setStreamDownloadListener(this);
-
+/*
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.fragment_setup, SetupFragment.class, savedInstanceState);
         transaction.add(R.id.fragment_output, OutputFragment.class, savedInstanceState);
-        transaction.commit();
-
+        transaction.commitNow();
+*/
         setupFragment = (SetupFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_setup);
         outputFragment = (OutputFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_output);
 
@@ -82,7 +85,6 @@ public class MainActivity extends AppCompatActivity
         logReader.setFilter(filter);
         logReader.enablePulling(executorService);
         executorService.submit(() -> downloadClient.download(url));
-
     }
 
     @Override

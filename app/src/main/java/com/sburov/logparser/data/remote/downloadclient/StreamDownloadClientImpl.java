@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class StreamDownloadClientImpl implements StreamDownloadClient {
@@ -42,6 +43,14 @@ public class StreamDownloadClientImpl implements StreamDownloadClient {
         int offset = 0;
         int length = buffer.length;
         try {
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(5000); // 5 seconds connectTimeout
+            connection.setReadTimeout(5000 ); // 5 seconds socketTimeout
+
+            // Connect
+            connection.connect(); // Without this line, method readLine() stucks!!!
+            // because it reads incorrect data, possibly from another memory area
+
             is = url.openStream();
             while (true) {
                 assert length <= buffer.length;

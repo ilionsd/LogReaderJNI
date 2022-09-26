@@ -47,7 +47,8 @@ public class LogReaderImpl implements LogReader, StreamConsumer {
 
     @Override
     public boolean setFilter(@NotNull final String filter) {
-        return nativeSetFilter(filter.getBytes(StandardCharsets.US_ASCII));
+        byte[] bytesASCII = filter.getBytes(StandardCharsets.US_ASCII);
+        return nativeSetFilter(bytesASCII, bytesASCII.length);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class LogReaderImpl implements LogReader, StreamConsumer {
 
     private native boolean nativeIsRunning();
 
-    private native boolean nativeSetFilter(byte[] filter);
+    private native boolean nativeSetFilter(byte[] filter, int length);
 
     private native boolean nativeAddSourceBlock(byte[] block, int length);
 

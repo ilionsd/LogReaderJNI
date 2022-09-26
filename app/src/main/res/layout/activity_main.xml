@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <FrameLayout
+    <fragment
+        android:name="com.sburov.logparser.presentation.SetupFragment"
         android:id="@+id/fragment_setup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -12,7 +13,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <FrameLayout
+    <fragment
+        android:name="com.sburov.logparser.presentation.OutputFragment"
         android:id="@+id/fragment_output"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
